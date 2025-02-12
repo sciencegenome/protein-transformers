@@ -43,7 +43,7 @@ pub fn profilesimilarity(path: &str, kmer: &str) -> Result<String, Box<dyn Error
         })
     }
 
-    let mut seqbtreemap: Vec<(String, Vec<String>)> = Vec::new();
+    let mut seqbtreemap: Vec<(String, (String, Vec<String>))> = Vec::new();
     for i in combinedinfo.iter() {
         let windowkmer: Vec<_> = i
             .sequence
@@ -57,34 +57,51 @@ pub fn profilesimilarity(path: &str, kmer: &str) -> Result<String, Box<dyn Error
             .into_iter()
             .collect::<HashSet<String>>()
             .into_iter()
+            .collect::<Vec<_>>()
+            .into_iter()
+            .map(String::from)
             .collect::<Vec<_>>();
-        seqbtreemap.push((i.sequence.clone(), sequencehash));
+        seqbtreemap.push((i.header.clone(), (i.sequence.clone(), sequencehash)));
     }
+
     let mut newbase: Vec<ProfileKmer> = Vec::new();
     for i in 0..seqbtreemap.len() - 1 {
-        let mut countkmer: usize = 0usize;
-        for j in 0..seqbtreemap[i].1.len() {
-            if seqbtreemap[i].1[j] == seqbtreemap[i + 1].1[j] {
+        let mut counterbase: Vec<usize> = Vec::new();
+        for j in 0..seqbtreemap[i].1 .1.len() {
+            let mut countkmer: usize = 0usize;
+            let itervalue = seqbtreemap[i].1 .1[j].clone();
+            if seqbtreemap[i + 1].1 .1.contains(&itervalue.to_string()) {
                 countkmer += 1usize;
-            } else {
-                continue;
             }
+            counterbase.push(countkmer);
         }
-        let sharedvalue: usize = seqbtreemap[i].1.len() + seqbtreemap[i + 1].1.len();
+        let sharedvalue: usize = seqbtreemap[i].1 .1.len() + seqbtreemap[i + 1].1 .1.len();
         newbase.push(ProfileKmer {
             name: seqbtreemap[i].0.clone(),
-            sequence: seqbtreemap[i].1.clone(),
-            count: countkmer,
-            shared: sharedvalue,
-            ratio: countkmer / sharedvalue * 100,
+            nextname: seqbtreemap[i + 1].0.clone(),
+            sequence: seqbtreemap[i].1 .1.clone(),
+            nextsequence: seqbtreemap[i + 1].1 .1.clone(),
+            count: counterbase.len(),
+            total: sharedvalue,
+            ratio: counterbase.len() as f32 / sharedvalue as f32 * 100.0,
         });
     }
     let mut filewrite = File::create("sequence-clusters.fasta").expect("file not found");
     for i in newbase.iter() {
         writeln!(
             filewrite,
-            "{:?}\t{:?}\t{:?}\t{:?}",
-            i.name, i.count, i.shared, i.ratio
+            "{:?}\t{:?}\t{:?}\t{:?}\t{:?}\t{:?}\t{:?}",
+            i.name, i.nextname, i.sequence, i.nextsequence, i.count, i.total, i.ratio
+        )
+        .expect("file not found");
+    }
+
+    let mut filewithoutkmer = File::create("sequence-cluster.txt").expect("file not found");
+    for i in newbase.iter() {
+        writeln!(
+            filewithoutkmer,
+            "{:?}\t{:?}\t{:?}\t{:?}\t{:?}",
+            i.name, i.nextname, i.count, i.total, i.ratio
         )
         .expect("file not found");
     }

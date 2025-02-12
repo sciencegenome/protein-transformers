@@ -1,9 +1,9 @@
 use clap::{Parser, Subcommand};
 #[derive(Debug, Parser)]
 #[command(
-    name = "sequence-transformers",
+    name = "identity-kmers",
     version = "1.0",
-    about = "sequencetranformersselection"
+    about = "sequence similarity based on shared kmers"
 )]
 pub struct CommandParse {
     /// subcommands for the specific actions

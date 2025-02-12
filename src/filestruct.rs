@@ -9,8 +9,10 @@ pub struct Genomeiter {
 
 pub struct ProfileKmer {
     pub name: String,
+    pub nextname: String,
     pub sequence: Vec<String>,
+    pub nextsequence: Vec<String>,
     pub count: usize,
-    pub shared: usize,
-    pub ratio: usize,
+    pub total: usize,
+    pub ratio: f32,
 }
